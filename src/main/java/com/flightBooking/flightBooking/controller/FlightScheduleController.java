@@ -1,37 +1,35 @@
 package com.flightBooking.flightBooking.controller;
 
-import com.flightBooking.flightBooking.services.FlightSchedule;
+import com.flightBooking.flightBooking.entity.FlightSchedule;
+import com.flightBooking.flightBooking.repository.FlightScheduleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
 
 @RestController
 @RequestMapping("/flightSchedule")
 public class FlightScheduleController {
-    private Map<String, FlightSchedule> scheduleMap = new HashMap<>();
 
-    @GetMapping()
+    @Autowired
+    private FlightScheduleRepository scheduleRepo;
+
+    @GetMapping
     public List<FlightSchedule> getAllFlights(@RequestParam(defaultValue = "asc") String sort) {
-        List<FlightSchedule> flights = new ArrayList<>(scheduleMap.values());
-        if (sort.equalsIgnoreCase("desc")) {
-            flights.sort(Comparator.comparing(FlightSchedule::getDate).reversed());
-        } else {
-            flights.sort(Comparator.comparing(FlightSchedule::getDate));
-        }
-        return flights;
+        List<FlightSchedule> flights = scheduleRepo.findAll();
+        return sort.equalsIgnoreCase("desc") ?
+                flights.stream().sorted(Comparator.comparing(FlightSchedule::getDate).reversed()).toList() :
+                flights.stream().sorted(Comparator.comparing(FlightSchedule::getDate)).toList();
     }
-
-
 
     @PostMapping
-    public String createSchedule(@RequestBody FlightSchedule newSchedule) {
-        scheduleMap.put(newSchedule.getId(), newSchedule);
-        return "Schedule ho gaya!";
+    public FlightSchedule createSchedule(@RequestBody FlightSchedule newSchedule) {
+        return scheduleRepo.save(newSchedule);
     }
 
-    @GetMapping("id/{myId}")
-    public FlightSchedule getScheduleById(@PathVariable String myId) {
-        return scheduleMap.get(myId);
+    @GetMapping("/id/{id}")
+    public FlightSchedule getScheduleById(@PathVariable Long id) {
+        return scheduleRepo.findById(id).orElse(null);
     }
-
 }
